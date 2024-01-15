@@ -1,0 +1,41 @@
+
+trigger:
+- development
+
+pool:
+name: 'MyPool' 
+demands: PowerShell
+
+variables:
+fileName: 'test.txt' 
+filePath: '$(Build.ArtifactStagingDirectory)/$(fileName)'
+
+jobs:
+- job: Write
+
+  steps:
+  - powershell: | 
+      Get-Date | Out-File -FilePath $(filePath) -Encoding utf8
+    displayName: 'Write to file'
+
+  - task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'test'
+    publishLocation: 'Container'
+
+- job: Read 
+  dependsOn: Write 
+  strategy:
+    parallel: 2 
+  steps:
+    - task: DownloadBuildArtifacts@0 
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'test' 
+        downloadPath: '$(System.ArtifactsDirectory)'
+
+    - powershell: |
+        Get-Content -Path $(System.ArtifactsDirectory)/test/$(fileName) | Write-Host
+      displayName: 'Read from file'
