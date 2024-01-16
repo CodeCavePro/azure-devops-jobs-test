@@ -3,26 +3,26 @@ trigger:
 - development
 
 pool:
-name: 'MyPool' 
-demands: PowerShell
+  vmImage: 'windows-latest'
 
 variables:
-fileName: 'test.txt' 
-filePath: '$(Build.ArtifactStagingDirectory)/$(fileName)'
+  fileName: 'test.txt' # Variable name of first file
+  filePath: '$(Build.ArtifactStagingDirectory)/$(fileName)' # Variable for path to first file
+  newFileName: 'new.txt' # Variable name of second file
+  newFilePath: '$(Build.ArtifactStagingDirectory)/$(newFileName)' # Variable for path to second file
 
 jobs:
 - job: Write
-
   steps:
   - powershell: | 
       Get-Date | Out-File -FilePath $(filePath) -Encoding utf8
     displayName: 'Write to file'
 
   - task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'test'
-    publishLocation: 'Container'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'test'
+      publishLocation: 'Container'
 
 - job: Read 
   dependsOn: Write 
@@ -39,3 +39,28 @@ jobs:
     - powershell: |
         Get-Content -Path $(System.ArtifactsDirectory)/test/$(fileName) | Write-Host
       displayName: 'Read from file'
+
+- job: Copy
+  dependsOn: Write 
+  strategy:
+    parallel: 5 
+  steps:
+  - task: DownloadBuildArtifacts@0 
+    inputs:
+      buildType: 'current'
+      downloadType: 'single' 
+      artifactName: 'test'
+      downloadPath: '$(System.ArtifactsDirectory)' 
+
+  - powershell: | 
+      $content = Get-Content -Path $(System.ArtifactsDirectory)/test/$(fileName)
+      Write-Host $content
+
+      Add-Content -Path $(newFilePath) -Value $content
+    displayName: 'Copy file'
+
+  - task: PublishBuildArtifacts@1 
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)' 
+      ArtifactName: 'new'
+      publishLocation: 'Container' 
