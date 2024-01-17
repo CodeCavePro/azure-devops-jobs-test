@@ -43,8 +43,8 @@ jobs:
 - job: Copy
   dependsOn: Write 
   strategy:
-    parallel: 5 
-  steps:
+    parallel: 2
+  steps: 
   - task: DownloadBuildArtifacts@0 
     inputs:
       buildType: 'current'
@@ -56,7 +56,10 @@ jobs:
       $content = Get-Content -Path $(System.ArtifactsDirectory)/test/$(fileName)
       Write-Host $content
 
-      Add-Content -Path $(newFilePath) -Value $content
+      for ($i = 0; $i -lt 5; $i++) {
+        Add-Content -Path $(newFilePath) -Value $content
+          Start-Sleep -Seconds 1
+      }
     displayName: 'Copy file'
 
   - task: PublishBuildArtifacts@1 
