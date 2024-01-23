@@ -27,9 +27,9 @@ stages:
         publishLocation: 'Container'
 
 - stage: Read_Copy
+  dependsOn: Write_Publish
   jobs:
   - job: Read 
-    dependsOn: Write_Publish
     strategy:
       parallel: 1
     steps:
@@ -45,7 +45,6 @@ stages:
         displayName: 'Read from file'
 
   - job: Copy
-    dependsOn: Write_Publish
     strategy:
       parallel: 1
     steps: 
