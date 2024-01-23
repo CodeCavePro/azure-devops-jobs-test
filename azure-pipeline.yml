@@ -19,7 +19,7 @@ stages:
     steps:
     - powershell: | 
         Get-Date | Out-File -FilePath $(filePath) -Encoding utf8
-        Set-Content -FilePath $(secondfilePath) -Value "asdfghjk"
+        Set-Content -Path $(secondfilePath) -Value "asdfghjk"
       displayName: 'Write to file'
 
     - task: PublishBuildArtifacts@1
