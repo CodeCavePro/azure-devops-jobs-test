@@ -8,6 +8,7 @@ pool:
 variables:
   fileName: 'test.txt' # Variable name of first file
   filePath: '$(Build.ArtifactStagingDirectory)/$(fileName)' # Variable for path to first file
+  secondfilePath: 'test2.txt'
   newFileName: 'new.txt' # Variable name of second file
   newFilePath: '$(Build.ArtifactStagingDirectory)/$(newFileName)' # Variable for path to second file
 
@@ -18,12 +19,13 @@ stages:
     steps:
     - powershell: | 
         Get-Date | Out-File -FilePath $(filePath) -Encoding utf8
+        Set-Content -FilePath $(secondfilePath) -Value "asdfghjk"
       displayName: 'Write to file'
 
     - task: PublishBuildArtifacts@1
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-        ArtifactName: 'test'
+        ArtifactName: 'first'
         publishLocation: 'Container'
 
 - stage: Read_Copy
@@ -37,7 +39,7 @@ stages:
         inputs:
           buildType: 'current'
           downloadType: 'single'
-          artifactName: 'test' 
+          artifactName: 'first' 
           downloadPath: '$(System.ArtifactsDirectory)'
 
       - powershell: |
@@ -52,11 +54,11 @@ stages:
       inputs:
         buildType: 'current'
         downloadType: 'single' 
-        artifactName: 'test'
-        downloadPath: '$(System.ArtifactsDirectory)' 
+        artifactName: 'first'
+        downloadPath: '$(System.SourceDirectory)' 
 
     - powershell: | 
-        $content = Get-Content -Path $(System.ArtifactsDirectory)/test/$(fileName)
+        $content = Get-Content -Path $(System.SourceDirectory)/first/$(fileName)
         Write-Host $content
 
         for ($i = 0; $i -lt 5; $i++) {
@@ -68,5 +70,5 @@ stages:
     - task: PublishBuildArtifacts@1 
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)' 
-        ArtifactName: 'new'
+        ArtifactName: 'second'
         publishLocation: 'Container' 
