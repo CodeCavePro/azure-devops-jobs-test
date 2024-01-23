@@ -11,59 +11,63 @@ variables:
   newFileName: 'new.txt' # Variable name of second file
   newFilePath: '$(Build.ArtifactStagingDirectory)/$(newFileName)' # Variable for path to second file
 
-jobs:
-- job: Write
-  steps:
-  - powershell: | 
-      Get-Date | Out-File -FilePath $(filePath) -Encoding utf8
-    displayName: 'Write to file'
+stages:
+- stage: Write_Publish
+  jobs:
+  - job: Write
+    steps:
+    - powershell: | 
+        Get-Date | Out-File -FilePath $(filePath) -Encoding utf8
+      displayName: 'Write to file'
 
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'test'
-      publishLocation: 'Container'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'test'
+        publishLocation: 'Container'
 
-- job: Read 
-  dependsOn: Write 
-  strategy:
-    parallel: 2 
-  steps:
+- stage: Write_Publish
+  jobs:
+  - job: Read 
+    dependsOn: Write_Publish
+    strategy:
+      parallel: 1
+    steps:
+      - task: DownloadBuildArtifacts@0 
+        inputs:
+          buildType: 'current'
+          downloadType: 'single'
+          artifactName: 'test' 
+          downloadPath: '$(System.ArtifactsDirectory)'
+
+      - powershell: |
+          Get-Content -Path $(System.ArtifactsDirectory)/test/$(fileName) | Write-Host
+        displayName: 'Read from file'
+
+  - job: Copy
+    dependsOn: Write_Publish
+    strategy:
+      parallel: 1
+    steps: 
     - task: DownloadBuildArtifacts@0 
       inputs:
         buildType: 'current'
-        downloadType: 'single'
-        artifactName: 'test' 
-        downloadPath: '$(System.ArtifactsDirectory)'
+        downloadType: 'single' 
+        artifactName: 'test'
+        downloadPath: '$(System.ArtifactsDirectory)' 
 
-    - powershell: |
-        Get-Content -Path $(System.ArtifactsDirectory)/test/$(fileName) | Write-Host
-      displayName: 'Read from file'
+    - powershell: | 
+        $content = Get-Content -Path $(System.ArtifactsDirectory)/test/$(fileName)
+        Write-Host $content
 
-- job: Copy
-  dependsOn: Write 
-  strategy:
-    parallel: 2
-  steps: 
-  - task: DownloadBuildArtifacts@0 
-    inputs:
-      buildType: 'current'
-      downloadType: 'single' 
-      artifactName: 'test'
-      downloadPath: '$(System.ArtifactsDirectory)' 
+        for ($i = 0; $i -lt 5; $i++) {
+          Add-Content -Path $(newFilePath) -Value $content
+            Start-Sleep -Seconds 1
+        }
+      displayName: 'Copy file'
 
-  - powershell: | 
-      $content = Get-Content -Path $(System.ArtifactsDirectory)/test/$(fileName)
-      Write-Host $content
-
-      for ($i = 0; $i -lt 5; $i++) {
-        Add-Content -Path $(newFilePath) -Value $content
-          Start-Sleep -Seconds 1
-      }
-    displayName: 'Copy file'
-
-  - task: PublishBuildArtifacts@1 
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)' 
-      ArtifactName: 'new'
-      publishLocation: 'Container' 
+    - task: PublishBuildArtifacts@1 
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)' 
+        ArtifactName: 'new'
+        publishLocation: 'Container' 
