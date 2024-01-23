@@ -43,7 +43,7 @@ stages:
           downloadPath: '$(System.ArtifactsDirectory)'
 
       - powershell: |
-          Get-Content -Path $(System.ArtifactsDirectory)/test/$(fileName) | Write-Host
+          Get-Content -Path $(System.ArtifactsDirectory)/first/$(fileName) | Write-Host
         displayName: 'Read from file'
 
   - job: Copy
