@@ -26,7 +26,7 @@ stages:
         ArtifactName: 'test'
         publishLocation: 'Container'
 
-- stage: Write_Publish
+- stage: Read_Copy
   jobs:
   - job: Read 
     dependsOn: Write_Publish
