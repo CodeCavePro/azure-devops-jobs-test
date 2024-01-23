@@ -55,10 +55,10 @@ stages:
         buildType: 'current'
         downloadType: 'single' 
         artifactName: 'first'
-        downloadPath: '$(System.SourceDirectory)' 
+        downloadPath: '$(Build.SourcesDirectory)' 
 
     - powershell: | 
-        $content = Get-Content -Path $(System.SourceDirectory)/first/$(fileName)
+        $content = Get-Content -Path $(Build.SourcesDirectory)/first/$(fileName)
         Write-Host $content
 
         for ($i = 0; $i -lt 5; $i++) {
